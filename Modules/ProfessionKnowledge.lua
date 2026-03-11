@@ -112,8 +112,8 @@ local PROFESSIONS = {
             { zone = 2395, x = 39.3, y = 45.4, itemID = 238577, questID = 89072 }, -- Half-Baked Techniques
             { zone = 2395, x = 48.3, y = 75.6, itemID = 238574, questID = 89069 }, -- Spare Ink
             { zone = 2437, x = 40.5, y = 49.4, itemID = 238573, questID = 89068 }, -- Leather-Bound Techniques
-            { zone = 2413, x = 52.7, y = 50.0, itemID = 238576, questID = 89070 }, -- Leftover Sanguithorn Pigment
-            { zone = 2413, x = 52.4, y = 52.6, itemID = 238575, questID = 89071 }, -- Intrepid Explorer's Marker
+			{ zone = 2413, x = 52.4, y = 52.6, itemID = 238575, questID = 89070 }, -- Intrepid Explorer's Marker
+            { zone = 2413, x = 52.7, y = 50.0, itemID = 238576, questID = 89071 }, -- Leftover Sanguithorn Pigment
             { zone = 2444, x = 60.7, y = 84.1, itemID = 238572, questID = 89067 }, -- Void-Touched Quill
         },
     },
@@ -214,34 +214,10 @@ end
 
 local RebuildGatheringLocationsFrame
 
-local watchedItemIDs = {}
-for _, prof in ipairs(PROFESSIONS) do
-    for _, item in ipairs(prof.items) do
-        if item.itemID then
-            watchedItemIDs[item.itemID] = true
-        end
-    end
-end
-
-local function AllWatchedItemsCached()
-    for id in pairs(watchedItemIDs) do
-        local name = GetItemInfo(id)
-        if not name or name == "" then return false end
-    end
-    return true
-end
-
 local itemCacheFrame = CreateFrame("Frame")
 itemCacheFrame:RegisterEvent("GET_ITEM_INFO_RECEIVED")
 itemCacheFrame:RegisterEvent("QUEST_TURNED_IN")
-itemCacheFrame:RegisterEvent("QUEST_LOG_UPDATE")
-itemCacheFrame:SetScript("OnEvent", function(self, event, itemID)
-    if event == "GET_ITEM_INFO_RECEIVED" then
-        if not watchedItemIDs[itemID] then return end
-        if AllWatchedItemsCached() then
-            self:UnregisterEvent("GET_ITEM_INFO_RECEIVED")
-        end
-    end
+itemCacheFrame:SetScript("OnEvent", function()
     if gatheringLocationsFrame and gatheringLocationsFrame:IsShown() then
         RebuildGatheringLocationsFrame()
     end
@@ -328,7 +304,7 @@ local function SetGatheringWaypoint(item)
     return false, "No waypoint API available"
 end
 
-local function BuildGatheringLocationsFrame(isRetry)
+local function BuildGatheringLocationsFrame()
     local db     = MR.db and MR.db.profile or {}
     local hadProfCache = MR.playerProfessions and next(MR.playerProfessions) ~= nil
     if not hadProfCache and MR.RefreshPlayerProfessions then
@@ -638,12 +614,12 @@ local function BuildGatheringLocationsFrame(isRetry)
         end
         yOff = 32
 
-        if not hasProfCache and not isRetry and C_Timer then
+        if not hasProfCache and C_Timer then
             C_Timer.After(0.75, function()
                 if gatheringLocationsFrame and gatheringLocationsFrame:IsShown() then
                     if MR.RefreshPlayerProfessions then MR:RefreshPlayerProfessions() end
                     gatheringLocationsFrame:Hide()
-                    gatheringLocationsFrame = BuildGatheringLocationsFrame(true)
+                    gatheringLocationsFrame = BuildGatheringLocationsFrame()
                 end
             end)
         end
